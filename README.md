@@ -52,7 +52,7 @@ The script:
 - linux (fedora): the attacker
 - windows 10: the victim
 
-[Play demo (webm)](ARPSpoofingScapy.webm)
+[ARPSpoofingScapy.webm](https://github.com/user-attachments/assets/547342d0-695d-4443-b0e7-1c62b7255d1c)
 
 ---
 ## How it Works

@@ -1,10 +1,132 @@
-😈 ARP Spoofing Man-in-the-Middle ToolThis is a Python network security script that performs an ARP Spoofing attack to demonstrate a Man-in-the-Middle (MITM) scenario on a local network. It utilizes the powerful Scapy library for crafting, sending, and sniffing network packets.Disclaimer: This tool is for educational purposes only. Use it responsibly and only on networks and devices where you have explicit permission. The author is not responsible for any misuse.💻 How It WorksThe script operates by actively poisoning the ARP caches of two target machines: the victim and the router (gateway).ARP Poisoning: The script continuously sends forged ARP Reply packets.It tells the victim that the attacker's MAC address is the router's IP address.It tells the router that the attacker's MAC address is the victim's IP address.Traffic Interception: Once poisoned, all network traffic intended to flow between the victim and the router is instead redirected through the attacker's machine.Data Sniffing: The script enables IP forwarding on the attacker's machine to allow traffic to pass through (preventing a denial-of-service), and simultaneously uses Scapy's sniffing function to capture and inspect the data in transit.Targeted Extraction: It is configured to specifically filter and print the raw HTTP payload (Port 80), demonstrating how unencrypted credentials or data can be exposed.⚙️ Prerequisites & Installation1. RequirementsYou must have Python 3 and the Scapy library installed.Bash# Install Scapy
-pip3 install scapy
-2. IP ForwardingFor a true MITM attack to work (i.e., for traffic to continue flowing after interception), you must enable IP forwarding on your attacking machine:Bash# For Linux: Enable IP Forwarding
-echo 1 > /proc/sys/net/ipv4/ip_forward
+# MITMscapy
 
-# To make this change permanent (optional):
-# sysctl -w net.ipv4.ip_forward=1
-🚀 UsageThe script requires root/administrator privileges (sudo) to craft and sniff raw network packets.Command SyntaxBashsudo python3 MITMscapy.py -i <interface> -r <router_ip> -v <victim_ip>
-ParametersFlagArgumentDescription-i, --interface<interface>The name of your network interface (e.g., eth0, wlan0, en0).-r, --routerIP<router_ip>The IP address of the local network gateway/router.-v, --victimIP<victim_ip>The IP address of the target machine.ExampleBashsudo python3 MITMscapy.py -i eth0 -r 192.168.1.1 -v 192.168.1.100
-🧹 Safe Exit & CleanupThe script is designed for a clean exit, which is critical for restoring network stability:It uses atexit.register(restore) to automatically call the restore() function when the script is terminated.To Stop: Press Ctrl+C in the terminal. The script will automatically send the correct ARP packets to restore the proper ARP caches on the victim and the router, ensuring normal network traffic resumes.
+`MITMscapy.py` is a Man-In-The-Middle (MITM) utility implemented in Python using **Scapy**.  
+It performs ARP spoofing to intercept and inspect HTTP (port 80) traffic between a victim and a router on the same local network.
+
+> **Warning:** This script is intended only for educational and authorized security testing.  
+> Unauthorized use on networks you do not own or do not have explicit permission to test is illegal.
+
+---
+
+## Table of Contents
+
+- [Description](#description)  
+- [Features](#features)  
+- [How it Works](#how-it-works)  
+- [Installation](#installation)  
+- [Usage](#usage)  
+  - [Arguments](#arguments)  
+  - [Example](#example)  
+- [Requirements](#requirements)  
+- [Safety & Ethics](#safety--ethics)  
+- [Notes & Limitations](#notes--limitations)  
+- [Contributing](#contributing)  
+- [License](#license)
+
+---
+
+## Description
+
+`MITMscapy.py` automates ARP spoofing between a victim and a router (gateway), enabling packet capture and payload inspection of intercepted HTTP traffic.
+
+The script:
+
+- Discovers MAC addresses for provided IPs.  
+- Forges ARP replies to poison ARP caches of both victim and router.  
+- Runs a packet sniffer on the specified interface and prints raw payloads when present.  
+- Attempts to restore original ARP mappings when the script exits.
+
+---
+
+## Features
+
+- Automatic ARP spoofing of victim and router.  
+- Live packet sniffing (default: HTTP / port 80).  
+- Automatic ARP table restoration on exit (uses `atexit` and sends corrective ARP replies).  
+- Multithreaded operation: spoofing and sniffing run concurrently.  
+- Prints decoded raw payloads (where decoding succeeds).
+
+---
+
+## How it Works
+
+1. The script uses ARP requests to obtain MAC addresses for the victim and router IPs.  
+2. It continuously sends forged ARP replies to both the victim and router so that each believes the attacker's MAC corresponds to the other's IP.  
+3. With traffic redirected, the script sniffs packets on the chosen interface and prints decoded payloads for packets that contain raw application data.  
+4. On normal exit (Ctrl+C) or process termination via Python mechanisms, the script tries to restore correct ARP mappings by sending multiple corrective ARP replies to both targets.
+
+---
+
+## Installation
+
+### installation
+```bash
+pip install scapy
+```
+
+> Note: On some systems Scapy may require additional OS packages (for example `libpcap` development headers). Use your distribution package manager if necessary.
+
+---
+
+## Usage
+
+Run the script with root/administrator privileges (required to send raw packets and sniff network interfaces):
+
+
+```bash
+sudo python3 MITMscapy.py -i <interface> -r <router_ip> -v <victim_ip>
+```
+
+### Arguments
+
+- `-i`, `--interface` — Network interface name (example: `eth0`, `wlan0`)  
+- `-r`, `--routerIP` — Router (gateway) IP address  
+- `-v`, `--victimIP` — Victim (target) IP address
+
+### Example
+```bash
+sudo python3 MITMscapy.py -i wlan0 -r 192.168.1.1 -v 192.168.1.20
+```
+
+---
+
+## Requirements
+
+- Python 3.8 or newer.  
+- Scapy (`pip install scapy`).  
+- Root/administrator privileges to operate network interfaces and send raw packets.
+
+---
+
+## Safety & Ethics
+
+- Use only in controlled lab environments or on networks where you have explicit permission to perform testing.  
+- ARP spoofing can disrupt network connectivity; inform and obtain consent from network owners and affected users.  
+- Misuse of this tool may be illegal and may cause harm to networks or devices. The author and repository maintainers are not responsible for misuse.
+
+---
+
+## Notes & Limitations
+
+- Sniffing is limited to port 80 (HTTP) by default; encrypted traffic (HTTPS) will not be readable.  
+- The script attempts to restore ARP entries on exit; unexpected termination (for example, `kill -9`) may leave incorrect ARP entries on targets. In such cases, rebooting targets or manually clearing ARP caches may be necessary.  
+- The `getMac` function retries via recursion on failure; repeated unresolved addresses can result in extended runtime. Consider improving retry/backoff logic for production testing.  
+- Decoding of raw payloads assumes text encodings; binary data or other encodings may be skipped silently.
+
+---
+
+## Contributing
+
+If you want to contribute improvements, consider:
+
+- adding configurable filters (ports, protocols),  
+- adding logging to file instead of printing to STDOUT,  
+- adding improved ARP recovery strategies,  
+- adding a safer/test mode that simulates spoofing without sending packets.
+
+Please submit pull requests or open issues describing what you intend to change.
+
+---
+
+## License
+**GPL-3.0 license**

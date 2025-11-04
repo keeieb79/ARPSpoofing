@@ -48,6 +48,13 @@ The script:
 
 ---
 
+## Demo video
+- linux (fedora): the attacker
+- windows 10: the victim
+
+[Play demo (webm)](ARPSpoofingScapy.webm)
+
+---
 ## How it Works
 
 1. The script uses ARP requests to obtain MAC addresses for the victim and router IPs.  
